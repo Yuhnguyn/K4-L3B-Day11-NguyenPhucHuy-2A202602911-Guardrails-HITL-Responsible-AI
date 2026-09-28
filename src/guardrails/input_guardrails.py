@@ -22,6 +22,9 @@ from core.config import ALLOWED_TOPICS, BLOCKED_TOPICS
 # Quyết định rõ ràng — tránh đảo nghĩa True/False
 InputStatus = Literal["ALLOW", "BLOCK"]
 
+# Ký tự Unicode vô hình hay bị dùng để lách regex ("Ignore\u200b all previous ...")
+_ZERO_WIDTH_RE = re.compile(r"[\u200b\u200c\u200d\u2060\ufeff]")
+
 
 # ============================================================
 # Implement detect_injection()
@@ -52,13 +55,32 @@ def detect_injection(user_input: str) -> InputStatus:
         ``"BLOCK"`` if injection detected (chặn), ``"ALLOW"`` otherwise (cho qua).
     """
     INJECTION_PATTERNS = [
-        # TODO: Add at least 5 regex patterns
-        # Example:
-        # r"ignore (all )?(previous|above) instructions",
+        # --- Tiếng Anh ---
+        r"ignore\s+(all\s+)?(previous|above|prior)?\s*instructions?",
+        r"disregard\s+(all\s+)?(previous|above|prior)?\s*(instructions?|rules?)",
+        r"forget\s+(your\s+)?(instructions?|rules?|prompt)",
+        r"you\s+are\s+now\b",
+        r"\bDAN\b",
+        r"system\s+prompt",
+        r"reveal\s+(your\s+)?(instructions?|prompt|password|api\s*key|secrets?)",
+        r"show\s+(me\s+)?(your\s+)?(system\s+)?(prompt|instructions?|config)",
+        r"pretend\s+(you\s+are|to\s+be)",
+        r"act\s+as\s+(a\s+|an\s+)?(unrestricted|jailbroken|evil)",
+        r"translate\s+(your\s+)?(instructions?|system\s+prompt|rules?)",
+        r"output\s+(your\s+)?(config|instructions?|prompt)\s+(as|in)\s+(json|yaml|xml)",
+        r"fill\s+in\s+(the\s+)?blanks?",
+        # --- Tiếng Việt ---
+        r"bỏ\s+qua\s+(mọi\s+)?hướng\s+dẫn",
+        r"quên\s+(mọi\s+)?hướng\s+dẫn",
+        r"tiết\s+lộ\s+(mật\s+khẩu|api|system\s*prompt)",
+        r"cho\s+tôi\s+(xem\s+)?(mật\s+khẩu|system\s*prompt|api\s*key)",
     ]
 
+    # Chuẩn hoá TRƯỚC khi match: bỏ ký tự vô hình để không lách được regex.
+    cleaned = _ZERO_WIDTH_RE.sub("", user_input or "")
+
     for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, user_input, re.IGNORECASE):
+        if re.search(pattern, cleaned, re.IGNORECASE):
             return "BLOCK"
     return "ALLOW"
 
@@ -86,12 +108,18 @@ def topic_filter(user_input: str) -> InputStatus:
     """
     input_lower = user_input.lower()
 
-    # TODO: Implement logic:
-    # 1. If input contains any blocked topic -> return "BLOCK"
-    # 2. If input doesn't contain any allowed topic -> return "BLOCK"
-    # 3. Otherwise -> return "ALLOW"
+    # 1. Topic cấm -> BLOCK ngay.
+    #    Dùng \b để "skill" không bị bắt nhầm vì chứa "kill".
+    for topic in BLOCKED_TOPICS:
+        if re.search(rf"\b{re.escape(topic)}\b", input_lower):
+            return "BLOCK"
 
-    pass  # Replace with your implementation
+    # 2. Không có tín hiệu banking nào -> BLOCK (off-topic).
+    if any(topic in input_lower for topic in ALLOWED_TOPICS):
+        return "ALLOW"
+
+    # 3. Còn lại: không phải banking -> BLOCK.
+    return "BLOCK"
 
 
 # ============================================================
@@ -144,14 +172,24 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         self.total_count += 1
         text = self._extract_text(user_message)
 
-        # TODO: Implement logic:
-        # 1. Call detect_injection(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 2. Call topic_filter(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 3. If both return "ALLOW": return None (let message through)
+        # Lớp 1 — prompt injection / jailbreak
+        if detect_injection(text) == "BLOCK":
+            self.blocked_count += 1
+            return self._block_response(
+                "I cannot process that request. "
+                "I only help with VinBank banking questions."
+            )
 
-        pass  # Replace with your implementation
+        # Lớp 2 — chỉ cho hỏi chuyện ngân hàng
+        if topic_filter(text) == "BLOCK":
+            self.blocked_count += 1
+            return self._block_response(
+                "I'm a VinBank assistant and can only help with "
+                "banking-related questions."
+            )
+
+        # Cả hai đều ALLOW -> cho qua (LLM mới được gọi)
+        return None
 
 
 # ============================================================
