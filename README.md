@@ -19,6 +19,36 @@ python scripts/grade.py --submission-dir . --out outputs/grade_report.json
 
 Toàn bộ file trong `outputs/` được **sinh bằng lệnh**, không viết tay.
 
+## Ghi chú kỹ thuật khi chạy
+
+### Model dùng cho Red / Red Advance
+
+RUBRIC quy định model mềm (điểm bắt buộc CP4) là `gpt-4o-mini` **hoặc** `gemini-3.5-flash`.
+Bài nộp này chạy Red / Red Advance trên **`gemini-3.5-flash-lite`** — đây là **sai lệch có chủ ý, có ghi nhận rõ**:
+
+- Google AI Studio free tier giới hạn **20 request/ngày/model**
+  (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Trong ngày làm lab,
+  `gemini-3.5-flash` đã cạn quota (lỗi `429 RESOURCE_EXHAUSTED`).
+- `flash-lite` là model cùng họ, có **bể quota riêng**, cho phép hoàn thành lượt chạy CP4
+  trong cùng ngày thay vì phải chờ reset.
+- `outputs/attack_results.json` khai đúng `llm_provider` / `llm_model` khớp `.env` lúc chạy.
+- Muốn chạy lại đúng model lab mặc định: đặt `GEMINI_MODEL=gemini-3.5-flash` trong `.env`
+  (sau khi quota reset theo ngày, 00:00 giờ Pacific) rồi chạy lại `python src/main.py --part 4`.
+
+### Blue (OpenRouter)
+
+Id trần `liquid/lfm-2.5-2.6b` hiện không có endpoint trên OpenRouter (404 "No endpoints found");
+bản khả dụng là `liquid/lfm-2.5-2.6b:free`. Đây vẫn đúng model Liquid LFM-2.5-2.6B mà lab yêu cầu.
+Lưu ý đây là **reasoning model** — cần `max_tokens` đủ lớn, nếu không toàn bộ token bị tiêu vào
+phần `reasoning` và `message.content` trả về `null`.
+
+### Xử lý lỗi tạm thời của free tier
+
+`src/core/utils.py` tự thử lại với backoff khi gặp lỗi tạm thời (429 theo phút, 503 quá tải),
+và **dừng ngay kèm hướng dẫn** khi gặp hết hạn mức ngày — vì retry không cứu được hạn mức ngày.
+Không có lớp này thì chỉ một lần 429 là đủ làm crash `--part 4` ở bước smoke test, hoặc ghi nhầm
+`layer: "error"` + `leaked: false` vào `attack_results.json` (bằng chứng sai).
+
 ---
 
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  

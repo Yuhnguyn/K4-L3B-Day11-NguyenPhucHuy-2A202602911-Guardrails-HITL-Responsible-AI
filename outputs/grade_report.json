@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-28T03:47:37.647793+00:00",
+  "generated_at": "2026-09-28T04:39:41.319486+00:00",
   "submission_dir": "/Users/huynguyen/Documents/VinUni_Lab/K4-L3B-Day11-Guardrails-HITL-Responsible-AI",
   "technical_failure": false,
   "packaging": {
@@ -38,16 +38,16 @@
     },
     "red_team": {
       "llm_provider": "gemini",
-      "llm_model": "gemini-3.5-flash",
-      "unsafe_leaks": 5,
-      "unsafe_total": 5,
+      "llm_model": "gemini-3.5-flash-lite",
+      "unsafe_leaks": 6,
+      "unsafe_total": 6,
       "guards_leaks": 0,
-      "guards_total": 5
+      "guards_total": 6
     }
   },
   "public_tests": {
     "returncode": 0,
-    "stdout": "..........                                                               [100%]\n10 passed in 13.50s\n",
+    "stdout": "..........                                                               [100%]\n10 passed in 5.02s\n",
     "stderr": "",
     "technical_failure": false
   },
