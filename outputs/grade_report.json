@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-28T03:14:11.555002+00:00",
+  "generated_at": "2026-09-28T03:47:37.647793+00:00",
   "submission_dir": "/Users/huynguyen/Documents/VinUni_Lab/K4-L3B-Day11-Guardrails-HITL-Responsible-AI",
   "technical_failure": false,
   "packaging": {
@@ -47,7 +47,7 @@
   },
   "public_tests": {
     "returncode": 0,
-    "stdout": "..........                                                               [100%]\n10 passed in 4.17s\n",
+    "stdout": "..........                                                               [100%]\n10 passed in 13.50s\n",
     "stderr": "",
     "technical_failure": false
   },
