@@ -24,16 +24,22 @@ Toàn bộ file trong `outputs/` được **sinh bằng lệnh**, không viết 
 ### Model dùng cho Red / Red Advance
 
 RUBRIC quy định model mềm (điểm bắt buộc CP4) là `gpt-4o-mini` **hoặc** `gemini-3.5-flash`.
-Bài nộp này chạy Red / Red Advance trên **`gemini-3.5-flash-lite`** — đây là **sai lệch có chủ ý, có ghi nhận rõ**:
 
-- Google AI Studio free tier giới hạn **20 request/ngày/model**
-  (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Trong ngày làm lab,
-  `gemini-3.5-flash` đã cạn quota (lỗi `429 RESOURCE_EXHAUSTED`).
-- `flash-lite` là model cùng họ, có **bể quota riêng**, cho phép hoàn thành lượt chạy CP4
-  trong cùng ngày thay vì phải chờ reset.
-- `outputs/attack_results.json` khai đúng `llm_provider` / `llm_model` khớp `.env` lúc chạy.
-- Muốn chạy lại đúng model lab mặc định: đặt `GEMINI_MODEL=gemini-3.5-flash` trong `.env`
-  (sau khi quota reset theo ngày, 00:00 giờ Pacific) rồi chạy lại `python src/main.py --part 4`.
+`outputs/attack_results.json` **hiện tại** được sinh với **`gemini-3.5-flash-lite`**, vì trong ngày
+làm lab `gemini-3.5-flash` đã cạn **hạn mức ngày** của free tier (`429 RESOURCE_EXHAUSTED`,
+`quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier`, `limit: 20`).
+`flash-lite` là model cùng họ nhưng có **bể quota riêng** theo từng model, nên vẫn hoàn thành
+được lượt chạy CP4 trong ngày. JSON khai đúng `llm_provider` / `llm_model` khớp `.env` lúc chạy.
+
+Hạn mức free tier của Google AI Studio: **20 request/ngày/model**, reset lúc **00:00 giờ Pacific**
+(= **14:00 giờ Việt Nam**). Muốn chạy lại trên đúng model lab mặc định — **không cần sửa code**:
+
+```bash
+# .env:  GEMINI_MODEL=gemini-3.5-flash
+python src/main.py --part 4
+pytest tests/public -q
+python scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
 
 ### Blue (OpenRouter)
 
